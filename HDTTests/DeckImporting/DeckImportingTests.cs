@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Hearthstone_Deck_Tracker;
 using Hearthstone_Deck_Tracker.Hearthstone;
@@ -17,9 +18,7 @@ namespace HDTTests.DeckImporting
 		 * Deck importing test cases:
 		 * 
 		 * Local decks
-		 *	- new deck in hearthstone (existing id, fully distinct cards from local decks)
 		 *	- new deck in hearthstone (new id, minor changes from local deck)
-		 *	- new deck in hearthstone (existing id, minor changes from local deck)
 		 *	- new deck in hearthstone (new id, major changes from local deck)
 		 *	- new deck in hearthstone (existing id, major changes from local deck)
 		 *	- new deck in hearthstone (new id, cards exactly match local deck)
@@ -141,10 +140,37 @@ namespace HDTTests.DeckImporting
 			DeckManager.ImportDecksTo(_localDecks, decks, false, true, true);
 
 			Assert.AreEqual(2, _localDecks.Count);
-			var localDeck = (Deck)TestData.LocalDeck1.Clone();
+			var localDeck = TestData.LocalDeck1;
 			localDeck.HsId = 0;
 			DeckComparer.AssertAreEqual(localDeck, _localDecks[0]);
 			DeckComparer.AssertAreEqual(TestData.RemoteDeck1_DifferentCards, _localDecks[1]);
+		}
+
+		[TestMethod]
+		public void HasLocal_NewRemote_ExistingId_MinorChanges()
+		{
+			_localDecks.Add(TestData.LocalDeck1);
+			_remoteDecks.Add(TestData.RemoteDeck1_MinorChanges);
+			Assert.AreEqual(1, _localDecks.Count);
+			Assert.AreEqual(1, _remoteDecks.Count);
+
+			var decks = DeckImporter.GetImportedDecks(_remoteDecks, _localDecks);
+
+			Assert.AreEqual(1, decks.Count);
+			DeckComparer.AssertAreEqual(TestData.RemoteDeck1_MinorChanges, decks[0].Deck);
+			Assert.IsTrue(decks[0].Import);
+			Assert.AreEqual(2, decks[0].ImportOptions.Count());
+			var existingDeck = decks[0].SelectedImportOption as ExistingDeck;
+			Assert.IsNotNull(existingDeck);
+			Assert.AreEqual(1, existingDeck.NewVersion.Major);
+			Assert.AreEqual(1, existingDeck.NewVersion.Minor);
+
+			DeckManager.ImportDecksTo(_localDecks, decks, false, true, true);
+
+			Assert.AreEqual(1, _localDecks.Count);
+			DeckComparer.AssertAreEqual(TestData.LocalDeck1_MinorChanges, _localDecks[0]);
+			Assert.AreEqual(1, _localDecks[0].Versions.Count);
+			DeckComparer.AssertAreEqual(TestData.LocalDeck1, _localDecks[0].Versions[0]);
 		}
 
 		[TestMethod]
