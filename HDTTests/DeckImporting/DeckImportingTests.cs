@@ -18,7 +18,6 @@ namespace HDTTests.DeckImporting
 		 * Deck importing test cases:
 		 * 
 		 * Local decks
-		 *	- new deck in hearthstone (new id, cards exactly match local deck)
 		 *	- new deck in hearthstone (existing id, cards exatly match local deck)
 		 *  - new deck in hearthstone (less than 30 cards) (irrelevant - handled before decks are passed to importer)
 		 *  
@@ -248,6 +247,33 @@ namespace HDTTests.DeckImporting
 			DeckComparer.AssertAreEqual(TestData.LocalDeck1_MajorChanges, _localDecks[0]);
 			Assert.AreEqual(1, _localDecks[0].Versions.Count);
 			DeckComparer.AssertAreEqual(TestData.LocalDeck1, _localDecks[0].Versions[0]);
+		}
+
+		[TestMethod]
+		public void HasLocal_NewRemote_NewId_ExactMatch()
+		{
+			var remoteDeck = TestData.RemoteDeck1;
+			remoteDeck.Id = 2;
+			_localDecks.Add(TestData.LocalDeck1);
+			_remoteDecks.Add(remoteDeck);
+			Assert.AreEqual(1, _localDecks.Count);
+			Assert.AreEqual(1, _remoteDecks.Count);
+
+			var decks = DeckImporter.GetImportedDecks(_remoteDecks, _localDecks);
+
+			Assert.AreEqual(1, decks.Count);
+			DeckComparer.AssertAreEqual(remoteDeck, decks[0].Deck);
+
+			var existingDeck = decks[0].SelectedImportOption as ExistingDeck;
+			Assert.IsNotNull(existingDeck);
+			Assert.AreEqual(0, existingDeck.NewVersion.Major);
+			Assert.AreEqual(0, existingDeck.NewVersion.Minor);
+			Assert.IsTrue(decks[0].Import);
+
+			DeckManager.ImportDecksTo(_localDecks, decks, false, true, true);
+
+			Assert.AreEqual(1, _localDecks.Count);
+			DeckComparer.AssertAreEqual(remoteDeck, _localDecks[0]);
 		}
 
 		[TestMethod]
