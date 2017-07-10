@@ -17,19 +17,11 @@ namespace HDTTests.DeckImporting
 		/*
 		 * Deck importing test cases:
 		 * 
-		 * Local decks
-		 *	- new deck in hearthstone (existing id, cards exatly match local deck)
-		 *  - new deck in hearthstone (less than 30 cards) (irrelevant - handled before decks are passed to importer)
-		 *  
 		 *  - archived decks
 		 *  - same vs different class
 		 *  - golden vs nongolden
-		 *	
-		 *	"id": hearthstones internal id
-		 *	"existing id": local deck with id
-		 *	"new id" no local deck with id
-		 *	"minor changes": less than 4 cards different
-		 *	"major changes": less than 10 cards different
+		 *  - existing deck as non-selected version
+		 * 
 		 */
 
 		private List<Deck> _localDecks;
@@ -274,6 +266,23 @@ namespace HDTTests.DeckImporting
 
 			Assert.AreEqual(1, _localDecks.Count);
 			DeckComparer.AssertAreEqual(remoteDeck, _localDecks[0]);
+		}
+
+		[TestMethod]
+		public void HasLocal_NewRemote_ExistingId_ExactMatch()
+		{
+			_localDecks.Add(TestData.LocalDeck1);
+			_remoteDecks.Add(TestData.RemoteDeck1);
+			Assert.AreEqual(1, _localDecks.Count);
+			Assert.AreEqual(1, _remoteDecks.Count);
+
+			var decks = DeckImporter.GetImportedDecks(_remoteDecks, _localDecks);
+
+			Assert.AreEqual(0, decks.Count);
+			DeckManager.ImportDecksTo(_localDecks, decks, false, true, true);
+
+			Assert.AreEqual(1, _localDecks.Count);
+			DeckComparer.AssertAreEqual(TestData.LocalDeck1, _localDecks[0]);
 		}
 
 		[TestMethod]
