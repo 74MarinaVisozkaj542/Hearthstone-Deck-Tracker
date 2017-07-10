@@ -18,7 +18,6 @@ namespace HDTTests.DeckImporting
 		 * Deck importing test cases:
 		 * 
 		 * Local decks
-		 *	- new deck in hearthstone (new id, minor changes from local deck)
 		 *	- new deck in hearthstone (new id, major changes from local deck)
 		 *	- new deck in hearthstone (existing id, major changes from local deck)
 		 *	- new deck in hearthstone (new id, cards exactly match local deck)
@@ -144,6 +143,34 @@ namespace HDTTests.DeckImporting
 			localDeck.HsId = 0;
 			DeckComparer.AssertAreEqual(localDeck, _localDecks[0]);
 			DeckComparer.AssertAreEqual(TestData.RemoteDeck1_DifferentCards, _localDecks[1]);
+		}
+
+		[TestMethod]
+		public void HasLocal_NewRemote_NewId_MinorChanges()
+		{
+			var remoteDeck = TestData.RemoteDeck1_MinorChanges;
+			remoteDeck.Id = 2;
+			_localDecks.Add(TestData.LocalDeck1);
+			_remoteDecks.Add(remoteDeck);
+			Assert.AreEqual(1, _localDecks.Count);
+			Assert.AreEqual(1, _remoteDecks.Count);
+
+			var decks = DeckImporter.GetImportedDecks(_remoteDecks, _localDecks);
+
+			Assert.AreEqual(1, decks.Count);
+			DeckComparer.AssertAreEqual(remoteDeck, decks[0].Deck);
+			Assert.IsTrue(decks[0].Import);
+			Assert.AreEqual(2, decks[0].ImportOptions.Count());
+
+			// The current behavior is to always create a new deck for a new id
+			// this will likely change with the new data model
+			Assert.AreEqual(typeof(NewDeck), decks[0].SelectedImportOption.GetType());
+
+			DeckManager.ImportDecksTo(_localDecks, decks, false, true, true);
+
+			Assert.AreEqual(2, _localDecks.Count);
+			DeckComparer.AssertAreEqual(TestData.LocalDeck1, _localDecks[0]);
+			DeckComparer.AssertAreEqual(remoteDeck, _localDecks[1]);
 		}
 
 		[TestMethod]
